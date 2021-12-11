@@ -1,9 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:u3_firebase_login_300/components/user_panel.dart';
 import 'package:u3_firebase_login_300/constants.dart';
 import 'package:u3_firebase_login_300/pages/login_page.dart';
+import 'package:u3_firebase_login_300/pages/productos_agregar_page.dart';
+import 'package:u3_firebase_login_300/service/firestore_service.dart';
 import 'package:u3_firebase_login_300/util/nav_util.dart';
 
 class ProductosPage extends StatefulWidget {
@@ -14,6 +19,8 @@ class ProductosPage extends StatefulWidget {
 }
 
 class _ProductosPageState extends State<ProductosPage> {
+  var fPrecio = NumberFormat.currency(decimalDigits: 0, locale: 'es-CL', symbol: '');
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,6 +30,7 @@ class _ProductosPageState extends State<ProductosPage> {
           color: Colors.yellow,
         ),
         title: Text('Productos Firestore'),
+        elevation: 0,
         actions: [
           PopupMenuButton(
             onSelected: (opcion) async {
@@ -49,38 +57,63 @@ class _ProductosPageState extends State<ProductosPage> {
       ),
       body: Column(
         children: [
-          Container(
-            padding: EdgeInsets.all(10),
-            width: double.infinity,
-            color: kPrimaryColor,
-            child: FutureBuilder(
-                future: this.getEmailUsuario(),
-                builder: (context, AsyncSnapshot snapshot) {
-                  if (!snapshot.hasData) {
-                    return Text('');
-                  }
-                  return Row(
-                    children: [
-                      Icon(MdiIcons.email, color: Colors.white),
-                      Text(
-                        ' Email: ',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      Text(
-                        snapshot.data,
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                    ],
+          panelUserEmail(),
+          Expanded(
+            child: StreamBuilder(
+              stream: FirestoreService().productos(),
+              builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                if (!snapshot.hasData || snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(),
                   );
-                }),
+                }
+                return ListView.separated(
+                  separatorBuilder: (_, __) => Divider(),
+                  itemCount: snapshot.data!.docs.length,
+                  itemBuilder: (context, index) {
+                    var producto = snapshot.data!.docs[index];
+                    return Dismissible(
+                      key: ObjectKey(snapshot.data!.docs[index]),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        color: Colors.red,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Borrar',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            Icon(
+                              MdiIcons.trashCan,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                      ),
+                      onDismissed: (direction) {
+                        FirestoreService().productosBorrar(producto.id);
+                      },
+                      child: ListTile(
+                        leading: Icon(MdiIcons.cube),
+                        title: Text('${producto['marca']} ${producto['modelo']}'),
+                        subtitle: Text('Stock: ${producto['stock']}'),
+                        trailing: Text('\$ ${fPrecio.format(producto['precio'])}'),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: () {
+          NavUtil.navegar(context, ProductosAgregarPage());
+        },
+      ),
     );
-  }
-
-  Future<String> getEmailUsuario() async {
-    SharedPreferences sp = await SharedPreferences.getInstance();
-    return sp.getString('user_email') ?? '';
   }
 }
