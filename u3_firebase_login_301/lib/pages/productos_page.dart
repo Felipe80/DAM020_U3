@@ -6,6 +6,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:u3_firebase_login_301/components/UserPanel.dart';
 import 'package:u3_firebase_login_301/constants.dart';
+import 'package:u3_firebase_login_301/pages/comentarios_page.dart';
 import 'package:u3_firebase_login_301/pages/login_page.dart';
 import 'package:u3_firebase_login_301/pages/productos_agregar_page.dart';
 import 'package:u3_firebase_login_301/service/firestore_service.dart';
@@ -103,6 +104,13 @@ class _ProductosPageState extends State<ProductosPage> {
                         title: Text('${producto['marca']} ${producto['modelo']}'),
                         subtitle: Text('Stock: ${producto['stock']}'),
                         trailing: Text('\$ ${fPrecio.format(producto['precio'])}'),
+                        onTap: () {
+                          MaterialPageRoute route = MaterialPageRoute(
+                              builder: (context) => ComentariosPage(
+                                    productoId: producto.id,
+                                  ));
+                          Navigator.push(context, route);
+                        },
                       ),
                     );
                   },

@@ -14,7 +14,15 @@ class FirestoreService {
     });
   }
 
-  Future productosBorrar(String productoId) async {
-    FirebaseFirestore.instance.collection('productos').doc(productoId).delete();
+  Future productosBorrar(String productoId) {
+    return FirebaseFirestore.instance.collection('productos').doc(productoId).delete();
+  }
+
+  Stream<DocumentSnapshot> producto(String productoId) {
+    return FirebaseFirestore.instance.collection('productos').doc(productoId).snapshots();
+  }
+
+  Stream<QuerySnapshot> comentariosProducto(String productoId) {
+    return FirebaseFirestore.instance.collection('comentarios').where('producto_id', isEqualTo: productoId).snapshots();
   }
 }
